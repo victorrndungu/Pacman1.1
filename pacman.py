@@ -45,19 +45,6 @@ def draw_confetti():
                            (random.randint(0, width), random.randint(0, height)), 3)
 
 
-
-# Check collision with dots and update score
-def check_dot_collision():
-    global score
-    eaten_dots = []
-    for i, (x, y) in enumerate(dots):
-        if math.hypot(pacman["x"] - x, pacman["y"] - y) < pacman["radius"] * 2:
-            eaten_dots.append(i)
-            score += 10  # Add 10 points for each dot eaten
-
-    # Remove eaten dots
-    return [dot for i, dot in enumerate(dots) if i not in eaten_dots]
-
 # Main game loop
 clock = pygame.time.Clock()
 while True:
@@ -73,6 +60,46 @@ while True:
             elif exit_button.collidepoint((mouse_x, mouse_y)):
                 pygame.quit()
                 sys.exit()
+
+# Game logic if not game over
+def move_pacman():
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT]: pacman["x"] -= pacman["speed"]
+    if keys[pygame.K_RIGHT]: pacman["x"] += pacman["speed"]
+    if keys[pygame.K_UP]: pacman["y"] -= pacman["speed"]
+    if keys[pygame.K_DOWN]: pacman["y"] += pacman["speed"]
+
+def check_wall_collision():
+    pacman_rect = pygame.Rect(pacman["x"] - pacman["radius"], pacman["y"] - pacman["radius"], pacman["radius"] * 2, pacman["radius"] * 2)
+    for wall in walls:
+        if pacman_rect.colliderect(wall):
+            if keys[pygame.K_LEFT]: pacman["x"] += pacman["speed"]
+            if keys[pygame.K_RIGHT]: pacman["x"] -= pacman["speed"]
+            if keys[pygame.K_UP]: pacman["y"] += pacman["speed"]
+            if keys[pygame.K_DOWN]: pacman["y"] -= pacman["speed"]
+
+def move_ghosts():
+    for ghost in ghosts:
+        ghost["x"], ghost["y"] = ghost["x"] + ghost["speed_x"], ghost["y"] + ghost["speed_y"]
+        if ghost["x"] - pacman["radius"] < 100 or ghost["x"] + pacman["radius"] > 700: ghost["speed_x"] *= -1
+        if ghost["y"] - pacman["radius"] < 100 or ghost["y"] + pacman["radius"] > 500: ghost["speed_y"] *= -1
+        if math.hypot(pacman["x"] - ghost["x"], pacman["y"] - ghost["y"]) < pacman["radius"] * 2:
+            return True  # Game over if Pac-Man collides with a ghost
+    return False
+
+
+# Check collision with dots and update score
+def check_dot_collision():
+    global score
+    eaten_dots = []
+    for i, (x, y) in enumerate(dots):
+        if math.hypot(pacman["x"] - x, pacman["y"] - y) < pacman["radius"] * 2:
+            eaten_dots.append(i)
+            score += 10  # Add 10 points for each dot eaten
+
+    # Remove eaten dots
+    return [dot for i, dot in enumerate(dots) if i not in eaten_dots]
+
 
     # Game logic if not game over
     if not game_over and not win:
@@ -104,3 +131,5 @@ while True:
 
     pygame.display.flip()
     clock.tick(30)
+
+
