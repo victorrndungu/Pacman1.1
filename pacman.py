@@ -44,6 +44,20 @@ def draw_confetti():
         pygame.draw.circle(screen, random.choice(confetti_colors),
                            (random.randint(0, width), random.randint(0, height)), 3)
 
+
+
+# Check collision with dots and update score
+def check_dot_collision():
+    global score
+    eaten_dots = []
+    for i, (x, y) in enumerate(dots):
+        if math.hypot(pacman["x"] - x, pacman["y"] - y) < pacman["radius"] * 2:
+            eaten_dots.append(i)
+            score += 10  # Add 10 points for each dot eaten
+
+    # Remove eaten dots
+    return [dot for i, dot in enumerate(dots) if i not in eaten_dots]
+
 # Main game loop
 clock = pygame.time.Clock()
 while True:
