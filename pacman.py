@@ -29,3 +29,17 @@ dots = [(200 + i * 50, 300) for i in range(10)]
 score, game_over, win = 0, False, False
 font = pygame.font.Font(None, 36)
 
+# Draw functions
+def draw_pacman():
+    angle = math.radians(pacman["mouth_angle"])
+    pygame.draw.circle(screen, pacman_color, (int(pacman["x"]), int(pacman["y"])), pacman["radius"])
+    pygame.draw.polygon(screen, background_color, [
+        (pacman["x"], pacman["y"]),
+        (pacman["x"] + pacman["radius"] * math.cos(angle), pacman["y"] - pacman["radius"] * math.sin(angle)),
+        (pacman["x"] + pacman["radius"] * math.cos(2 * math.pi - angle), pacman["y"] - pacman["radius"] * math.sin(2 * math.pi - angle))
+    ])
+
+def draw_confetti():
+    for _ in range(100):
+        pygame.draw.circle(screen, random.choice(confetti_colors),
+                           (random.randint(0, width), random.randint(0, height)), 3)
