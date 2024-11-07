@@ -107,7 +107,7 @@ Melissa Ndeti (https://github.com/melissandeti22)
 
 
 ## Getting Help
-or questions, suggestions, or troubleshooting, you can:
+ for questions, suggestions, or troubleshooting, you can:
 
 Check the project’s GitHub Issues page: GitHub Issues.
 Ask in the Discussions section on GitHub for help from other users and developers.
