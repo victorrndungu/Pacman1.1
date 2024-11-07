@@ -37,7 +37,7 @@ It is a simple Pac-Man-inspired game built using Python and Pygame. The game inc
 1. Run the game:
 
     ```bash
-    python Pac-Man.py
+    python pacman.py
     ```
 
 2. Use arrow keys to move Pac-Man.
