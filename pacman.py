@@ -6,120 +6,195 @@ import random
 # Initialize pygame modules
 pygame.init()
 
-# Screen settings
+# Screen dimensions and settings
 width, height = 800, 600
-screen = pygame.display.set_mode((width, height))
-pygame.display.set_caption("Pac-Man Game")
+screen = pygame.display.set_mode((width, height)) #creates a window or screen
+pygame.display.set_caption("Pac-Man Game") #window tittle
 
 # Colors
-background_color = (0, 0, 0)
-pacman_color = (255, 255, 0)
-ghost_color = (255, 0, 0)
-wall_color = (0, 0, 255)
-dot_color = (0, 255, 255)
-confetti_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0)]
+background_color = (0,0,0) #Black
+pacman_color = (255, 255, 0) #Yellow
+ghost_color = (255, 0, 0) #Red
+wall_color = (0, 0, 255) #Blue
+dot_color = (0, 255, 255) #White
 
-# Game settings
-pacman = {"x": 80, "y": 100, "radius": 20, "speed": 10, "mouth_angle": 0}
-ghosts = [{"x": random.randint(200, width - 100), "y": random.randint(100, height - 100),
-           "speed_x": random.choice([-3, 3]), "speed_y": random.choice([-3, 3])} for _ in range(3)]
-walls = [pygame.Rect(100, 100, 250, 10), pygame.Rect(450, 100, 250, 10),
-         pygame.Rect(100, 490, 600, 10), pygame.Rect(100, 100, 10, 400), pygame.Rect(690, 100, 10, 400)]
+# Pac-Man settings
+pacman_radius = 20
+pacman_x, pacman_y = 80, 100   # Initial position
+pacman_speed = 10
+mouth_angle = 0 # For opening and closing the mouth
+mouth_opening = 15 # Angle of mouth opening
+
+# Ghost settings
+ghost_radius = 20
+# initializes a list named ghosts. Each element of this list will represent a ghost in the game.
+ghosts = [
+#randomly generates the coordinates of the pacman to ensure movement
+    {"x": random.randint(200, width - 100), "y": random.randint(100, height - 100), "speed_x": -3, "speed_y": 3},
+    {"x": random.randint(200, width - 100), "y": random.randint(100, height - 100), "speed_x": 5, "speed_y": -2},
+    {"x": random.randint(200, width - 100), "y": random.randint(100, height - 100), "speed_x": 4, "speed_y": 4}
+]
+# Wall dimensions with an opening
+walls = [
+    pygame.Rect(100, 100, 250, 10),  # Top left section of top wall
+    pygame.Rect(450, 100, 250, 10),  # Top right section of top wall (gap in the middle)
+    pygame.Rect(100, 490, 600, 10),  # Bottom horizontal wall
+    pygame.Rect(100, 100, 10, 400),  # Left vertical wall
+    pygame.Rect(690, 100, 10, 400)   # Right vertical wall
+]
+
+# Dot coordinates List Comprehension: The code uses a list comprehension to create a list of coordinates,
+# each representing a dot's position. List comprehensions are a concise way to create lists in Python.
 dots = [(200 + i * 50, 300) for i in range(10)]
-score, game_over, win = 0, False, False
+score = 0
+
+#Sets up the font used to display the score and game-over message on the screen.
+# Fonts
 font = pygame.font.Font(None, 36)
 
-# Draw functions
-def draw_pacman():
-    angle = math.radians(pacman["mouth_angle"])
-    pygame.draw.circle(screen, pacman_color, (int(pacman["x"]), int(pacman["y"])), pacman["radius"])
+#Draws Pac-Man with a "mouth" based on the current angle (mouth_angle).
+#This creates the effect of Pac-Man’s chomping by dynamically adjusting the opening angle.
+def draw_pacman(x, y, radius, angle):
+    start_angle = math.radians(angle)
+    end_angle = 2 * math.pi - start_angle
+    pygame.draw.circle(screen, pacman_color, (int(x), int(y)), radius)
+
+    #Draws the mouth as a triangle (wedge) that overlays part of the circle.
     pygame.draw.polygon(screen, background_color, [
-        (pacman["x"], pacman["y"]),
-        (pacman["x"] + pacman["radius"] * math.cos(angle), pacman["y"] - pacman["radius"] * math.sin(angle)),
-        (pacman["x"] + pacman["radius"] * math.cos(2 * math.pi - angle), pacman["y"] - pacman["radius"] * math.sin(2 * math.pi - angle))
+        (x, y),
+        (x + radius * math.cos(start_angle), y - radius * math.sin(start_angle)),
+        (x + radius * math.cos(end_angle), y - radius * math.sin(end_angle))
     ])
+# Initialize confetti properties
+confetti = []
+num_confetti = 100  # Number of confetti particles
 
-def draw_confetti():
-    for _ in range(100):
-        pygame.draw.circle(screen, random.choice(confetti_colors),
-                           (random.randint(0, width), random.randint(0, height)), 3)
-
-# Main game loop
+# Game loop
 clock = pygame.time.Clock()
+game_over = False
+win = False  # Tracks if player won
 while True:
+    # Event handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-        if (game_over or win) and event.type == pygame.MOUSEBUTTONDOWN:
-            mouse_x, mouse_y = pygame.mouse.get_pos()
-            if restart_button.collidepoint((mouse_x, mouse_y)):
-                pacman["x"], pacman["y"], score, game_over, win = 80, 100, 0, False, False
-                dots = [(200 + i * 50, 300) for i in range(10)]
-            elif exit_button.collidepoint((mouse_x, mouse_y)):
-                pygame.quit()
-                sys.exit()
 
-    # Game logic if not game over
-    if not game_over and not win:
+    # Only proceed if game is not over
+    if not game_over:
+        # Movement controls
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]: pacman["x"] -= pacman["speed"]
-        if keys[pygame.K_RIGHT]: pacman["x"] += pacman["speed"]
-        if keys[pygame.K_UP]: pacman["y"] -= pacman["speed"]
-        if keys[pygame.K_DOWN]: pacman["y"] += pacman["speed"]
+        if keys[pygame.K_LEFT]:
+            pacman_x -= pacman_speed
+        if keys[pygame.K_RIGHT]:
+            pacman_x += pacman_speed
+        if keys[pygame.K_UP]:
+            pacman_y -= pacman_speed
+        if keys[pygame.K_DOWN]:
+            pacman_y += pacman_speed
 
-        # Collision with walls
-        pacman_rect = pygame.Rect(pacman["x"] - pacman["radius"], pacman["y"] - pacman["radius"], pacman["radius"] * 2, pacman["radius"] * 2)
+        # Check wall collisions for Pac-Man
+        pacman_rect = pygame.Rect(pacman_x - pacman_radius, pacman_y - pacman_radius,
+                                  pacman_radius * 2, pacman_radius * 2)
         for wall in walls:
             if pacman_rect.colliderect(wall):
-                if keys[pygame.K_LEFT]: pacman["x"] += pacman["speed"]
-                if keys[pygame.K_RIGHT]: pacman["x"] -= pacman["speed"]
-                if keys[pygame.K_UP]: pacman["y"] += pacman["speed"]
-                if keys[pygame.K_DOWN]: pacman["y"] -= pacman["speed"]
+                # Move Pac-Man back if he collides with a wall
+                if keys[pygame.K_LEFT]:
+                    pacman_x += pacman_speed
+                if keys[pygame.K_RIGHT]:
+                    pacman_x -= pacman_speed
+                if keys[pygame.K_UP]:
+                    pacman_y += pacman_speed
+                if keys[pygame.K_DOWN]:
+                    pacman_y -= pacman_speed
 
-        pacman["mouth_angle"] = 15 if (pygame.time.get_ticks() // 100) % 2 == 0 else 0
+        # Alternates the angle of Pac-Man's mouth for a chomping effect
+        mouth_angle = mouth_opening if (pygame.time.get_ticks() // 100) % 2 == 0 else 0
 
-        # Move ghosts and check collision with Pac-Man
+        # Move ghosts
         for ghost in ghosts:
-            ghost["x"], ghost["y"] = ghost["x"] + ghost["speed_x"], ghost["y"] + ghost["speed_y"]
-            if ghost["x"] - pacman["radius"] < 100 or ghost["x"] + pacman["radius"] > 700: ghost["speed_x"] *= -1
-            if ghost["y"] - pacman["radius"] < 100 or ghost["y"] + pacman["radius"] > 500: ghost["speed_y"] *= -1
-            if math.hypot(pacman["x"] - ghost["x"], pacman["y"] - ghost["y"]) < pacman["radius"] * 2:
+            ghost["x"] += ghost["speed_x"]
+            ghost["y"] += ghost["speed_y"]
+            # Reverse direction if a ghost hits a wall
+            if ghost["x"] - ghost_radius < 100 or ghost["x"] + ghost_radius > 700:
+                ghost["speed_x"] = -ghost["speed_x"]
+            if ghost["y"] - ghost_radius < 100 or ghost["y"] + ghost_radius > 500:
+                ghost["speed_y"] = -ghost["speed_y"]
+
+            # Check for collision with Pac-Man (Game Over Condition)
+            if math.hypot(pacman_x - ghost["x"], pacman_y - ghost["y"]) < pacman_radius + ghost_radius:
                 game_over = True
 
-        # Check collision with dots
-        eaten_dots = []
-        for i, (x, y) in enumerate(dots):
-            if math.hypot(pacman["x"] - x, pacman["y"] - y) < pacman["radius"] * 2:
-                eaten_dots.append(i)
-                score += 10  # Add 10 points for each dot eaten
-
-        # Remove eaten dots
-        dots = [dot for i, dot in enumerate(dots) if i not in eaten_dots]
-
-        # Draw and update screen
+        # Clear screen
         screen.fill(background_color)
-        for wall in walls: pygame.draw.rect(screen, wall_color, wall)
-        for x, y in dots: pygame.draw.circle(screen, dot_color, (x, y), 5)
-        draw_pacman()
-        for ghost in ghosts: pygame.draw.circle(screen, ghost_color, (int(ghost["x"]), int(ghost["y"])), pacman["radius"])
-        screen.blit(font.render(f"Score: {score}", True, (255, 255, 255)), (10, 10))
 
-        # Win condition
-        if not dots: win = True
+        # Draw walls with an opening in the top wall
+        for wall in walls:
+            pygame.draw.rect(screen, wall_color, wall)
+
+        # Draw dots and remove them if Pac-Man "eats" them
+        new_dots = []
+        for dot_x, dot_y in dots:
+            if math.hypot(pacman_x - dot_x, pacman_y - dot_y) < pacman_radius:
+                score += 10  # Increase score
+                continue  # Pac-Man eats the dot if within range
+            pygame.draw.circle(screen, dot_color, (dot_x, dot_y), 5)
+            new_dots.append((dot_x, dot_y))
+        dots = new_dots
+
+        # Draw Pac-Man
+        draw_pacman(pacman_x, pacman_y, pacman_radius, mouth_angle)
+
+        # Draw ghosts
+        for ghost in ghosts:
+            pygame.draw.circle(screen, ghost_color, (int(ghost["x"]), int(ghost["y"])), ghost_radius)
+
+        # Display score
+        score_text = font.render(f"Score: {score}", True, (255, 255, 255))
+        screen.blit(score_text, (10, 10))
+
+        # Check if all dots are eaten or if score reaches 100 (Winning Condition)
+        if not dots or score >= 100:
+            game_over = True
+            win = score >= 100
+
     else:
-        # Display win/lose and buttons
-        screen.fill(background_color)
         if win:
-            draw_confetti()
-            screen.blit(font.render("You Win!", True, (255, 255, 0)), (width // 2 - 50, height // 2 - 40))
-        else:
-            screen.blit(font.render("Game Over!", True, (255, 0, 0)), (width // 2 - 80, height // 2))
-        restart_button, exit_button = pygame.Rect(width // 2 - 100, height // 2 + 40, 100, 50), pygame.Rect(width // 2 + 20, height // 2 + 40, 100, 50)
-        pygame.draw.rect(screen, (0, 255, 0), restart_button)
-        pygame.draw.rect(screen, (255, 0, 0), exit_button)
-        screen.blit(font.render("Restart", True, (0, 0, 0)), (width // 2 - 85, height // 2 + 50))
-        screen.blit(font.render("Exit", True, (0, 0, 0)), (width // 2 + 40, height // 2 + 50))
+            # Display "You Win!" message
+            game_over_text = font.render("You Win!", True, (0, 255, 0))
+            screen.blit(game_over_text, (width // 2 - 80, height // 2))
 
+            # Create confetti particles if not yet created
+            if not confetti:
+                for _ in range(num_confetti):
+                    confetti.append({
+                        "x": random.randint(0, width),
+                        "y": random.randint(0, height),
+                        "color": (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255)),
+                        "speed_y": random.uniform(1, 4),  # Falling speed
+                        "size": random.randint(3, 7),  # Size of confetti
+                        "lifespan": random.randint(30, 60)  # Frames before it disappears
+                    })
+
+            # Draw and update confetti
+            for particle in confetti:
+                pygame.draw.circle(screen, particle["color"], (int(particle["x"]), int(particle["y"])), particle["size"])
+                particle["y"] += particle["speed_y"]
+                particle["lifespan"] -= 1
+
+            # Remove expired confetti
+            confetti = [p for p in confetti if p["lifespan"] > 0]
+
+        else:
+            # Display game over message
+            game_over_text = font.render("Game Over!", True, (255, 0, 0))
+            screen.blit(game_over_text, (width // 2 - 80, height // 2))
+
+        pygame.display.flip()
+        pygame.time.delay(2000)
+        pygame.quit()
+        sys.exit()
+
+    # Update display
     pygame.display.flip()
-    clock.tick(30)
+    clock.tick(30)  # Limit the frame rate
