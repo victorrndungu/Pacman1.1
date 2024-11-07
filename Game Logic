@@ -1,0 +1,25 @@
+# Game logic if not game over
+def move_pacman():
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT]: pacman["x"] -= pacman["speed"]
+    if keys[pygame.K_RIGHT]: pacman["x"] += pacman["speed"]
+    if keys[pygame.K_UP]: pacman["y"] -= pacman["speed"]
+    if keys[pygame.K_DOWN]: pacman["y"] += pacman["speed"]
+
+def check_wall_collision():
+    pacman_rect = pygame.Rect(pacman["x"] - pacman["radius"], pacman["y"] - pacman["radius"], pacman["radius"] * 2, pacman["radius"] * 2)
+    for wall in walls:
+        if pacman_rect.colliderect(wall):
+            if keys[pygame.K_LEFT]: pacman["x"] += pacman["speed"]
+            if keys[pygame.K_RIGHT]: pacman["x"] -= pacman["speed"]
+            if keys[pygame.K_UP]: pacman["y"] += pacman["speed"]
+            if keys[pygame.K_DOWN]: pacman["y"] -= pacman["speed"]
+
+def move_ghosts():
+    for ghost in ghosts:
+        ghost["x"], ghost["y"] = ghost["x"] + ghost["speed_x"], ghost["y"] + ghost["speed_y"]
+        if ghost["x"] - pacman["radius"] < 100 or ghost["x"] + pacman["radius"] > 700: ghost["speed_x"] *= -1
+        if ghost["y"] - pacman["radius"] < 100 or ghost["y"] + pacman["radius"] > 500: ghost["speed_y"] *= -1
+        if math.hypot(pacman["x"] - ghost["x"], pacman["y"] - ghost["y"]) < pacman["radius"] * 2:
+            return True  # Game over if Pac-Man collides with a ghost
+    return False
