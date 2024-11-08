@@ -60,7 +60,7 @@ Step 2: Setting Up the Pac-Man Project in PyCharm
     pip install pygame
 3. Run the Game: Launch the game by running the Python script:
     ```bash    
-    python pacman..py
+    python pacman.py
 
 
 ## Usage Guide
