@@ -58,9 +58,9 @@ Step 2: Setting Up the Pac-Man Project in PyCharm
 2. Install Required Packages: Make sure you have Python 3 and pip installed. Then, install pygame:
     ```bash
     pip install pygame
-3.Run the Game: Launch the game by running the Python script:
+3. Run the Game: Launch the game by running the Python script:
     ```bash    
-    python pacmaN..py
+    python pacman..py
 
 
 ## Usage Guide
