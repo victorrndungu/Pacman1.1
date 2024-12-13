@@ -35,18 +35,33 @@
 ---
 
 ## Installation Instructions
+Step 1: Installing PyCharm
+Download PyCharm:
 
-To set up the **Pac-Man Game** on your computer, follow these steps:
+- Go to the official PyCharm website: https://www.jetbrains.com/pycharm/.
+Choose the Community Edition (free) or Professional Edition (paid with extra features) and click Download.
+Install PyCharm:
 
+- Open the downloaded installer and follow the on-screen instructions.
+Choose the installation path and check the box to create a desktop shortcut if desired.
+During installation, you may also see options to add PyCharm to your system PATH and to create file associations for .py files.
+Launch PyCharm:
+
+- Once installed, open PyCharm from the Start Menu (Windows) or Applications folder (Mac).
+On the first launch, PyCharm will prompt you to import settings (choose Do Not Import if you’re new to PyCharm).
+
+
+Step 2: Setting Up the Pac-Man Project in PyCharm
 1. **Clone or Download the Repository**:
    ```bash
    git clone https://github.com/victorrndungu/Pacman1.1
 2. Install Required Packages: Make sure you have Python 3 and pip installed. Then, install pygame:
     ```bash
     pip install pygame
-3.Run the Game: Launch the game by running the Python script:
+3. Run the Game: Launch the game by running the Python script:
     ```bash    
-    python pacman_game.py
+    python pacman.py
+
 
 ## Usage Guide
 
