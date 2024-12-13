@@ -3,198 +3,248 @@ import sys
 import math
 import random
 
-# Initialize pygame modules
+# Initialize pygame
 pygame.init()
 
-# Screen dimensions and settings
+# Screen dimensions
 width, height = 800, 600
-screen = pygame.display.set_mode((width, height)) #creates a window or screen
-pygame.display.set_caption("Pac-Man Game") #window tittle
+screen = pygame.display.set_mode((width, height))
+pygame.display.set_caption("Pac-Man with Levels")
 
 # Colors
-background_color = (0,0,0) #Black
-pacman_color = (255, 255, 0) #Yellow
-ghost_color = (255, 0, 0) #Red
-wall_color = (0, 0, 255) #Blue
-dot_color = (0, 255, 255) #White
+background_color = (0, 0, 0)   # Black
+pacman_color = (255, 255, 0)  # Yellow
+ghost_color = (255, 255, 255)  # White
+wall_color = (0, 0, 255)      # Blue
+dot_color = (0, 255, 255)     # Cyan
 
 # Pac-Man settings
 pacman_radius = 20
-pacman_x, pacman_y = 80, 100   # Initial position
-pacman_speed = 10
-mouth_angle = 0 # For opening and closing the mouth
-mouth_opening = 15 # Angle of mouth opening
+pacman_x, pacman_y = 100, 100
+pacman_speed = 5
+mouth_angle = 0
+mouth_opening = 15
+mouth_direction = 1  # 1 for opening, -1 for closing
 
 # Ghost settings
 ghost_radius = 20
-# initializes a list named ghosts. Each element of this list will represent a ghost in the game.
 ghosts = [
-#randomly generates the coordinates of the pacman to ensure movement
-    {"x": random.randint(200, width - 100), "y": random.randint(100, height - 100), "speed_x": -3, "speed_y": 3},
-    {"x": random.randint(200, width - 100), "y": random.randint(100, height - 100), "speed_x": 5, "speed_y": -2},
-    {"x": random.randint(200, width - 100), "y": random.randint(100, height - 100), "speed_x": 4, "speed_y": 4}
-]
-# Wall dimensions with an opening
-walls = [
-    pygame.Rect(100, 100, 250, 10),  # Top left section of top wall
-    pygame.Rect(450, 100, 250, 10),  # Top right section of top wall (gap in the middle)
-    pygame.Rect(100, 490, 600, 10),  # Bottom horizontal wall
-    pygame.Rect(100, 100, 10, 400),  # Left vertical wall
-    pygame.Rect(690, 100, 10, 400)   # Right vertical wall
+    {"x": 300, "y": 200, "speed_x": 3, "speed_y": 3},
+    {"x": 500, "y": 300, "speed_x": -4, "speed_y": 2},
+    {"x": 600, "y": 400, "speed_x": 2, "speed_y": -3}
 ]
 
-# Dot coordinates List Comprehension: The code uses a list comprehension to create a list of coordinates,
-# each representing a dot's position. List comprehensions are a concise way to create lists in Python.
-dots = [(200 + i * 50, 300) for i in range(10)]
-score = 0
+# Maze layout for different levels
+level_maze_layouts = [
+    # Level 1 maze
+    [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+        [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1],
+        [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1],
+        [1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    ],
+    # Level 2 maze (more complex)
+    [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 0, 2, 0, 1, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0, 1],
+        [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 2, 1],
+        [1, 0, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 1, 0, 2, 1],
+        [1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    ]
+]
 
-#Sets up the font used to display the score and game-over message on the screen.
+# Cell size
+cell_width = width // len(level_maze_layouts[0][0])
+cell_height = height // len(level_maze_layouts[0])
+
 # Fonts
 font = pygame.font.Font(None, 36)
 
-#Draws Pac-Man with a "mouth" based on the current angle (mouth_angle).
-#This creates the effect of Pac-Man’s chomping by dynamically adjusting the opening angle.
+# Initialize game state
+level = 0
+score = 0
+pacman_x, pacman_y = 100, 100
+pacman_speed = 5
+ghosts = [
+    {"x": 300, "y": 200, "speed_x": 3, "speed_y": 3},
+    {"x": 500, "y": 300, "speed_x": -4, "speed_y": 2},
+    {"x": 600, "y": 400, "speed_x": 2, "speed_y": -3}
+]
+
+# Dots for level
+def create_dots(maze_layout):
+    return [
+        (col * cell_width + cell_width // 2, row * cell_height + cell_height // 2)
+        for row, maze_row in enumerate(maze_layout)
+        for col, cell in enumerate(maze_row)
+        if cell == 0
+    ]
+
+dots = create_dots(level_maze_layouts[level])
+game_over = False
+game_over_time = 0  # For timing the Game Over screen duration
+
+# Draw maze function
+def draw_maze(maze_layout):
+    for row_index, row in enumerate(maze_layout):
+        for col_index, cell in enumerate(row):
+            if cell == 1:
+                x = col_index * cell_width
+                y = row_index * cell_height
+                pygame.draw.rect(screen, wall_color, (x, y, cell_width, cell_height))
+
+# Pac-Man drawing with animated mouth
 def draw_pacman(x, y, radius, angle):
     start_angle = math.radians(angle)
     end_angle = 2 * math.pi - start_angle
     pygame.draw.circle(screen, pacman_color, (int(x), int(y)), radius)
-
-    #Draws the mouth as a triangle (wedge) that overlays part of the circle.
     pygame.draw.polygon(screen, background_color, [
         (x, y),
         (x + radius * math.cos(start_angle), y - radius * math.sin(start_angle)),
         (x + radius * math.cos(end_angle), y - radius * math.sin(end_angle))
     ])
-# Initialize confetti properties
-confetti = []
-num_confetti = 100  # Number of confetti particles
+
+# Ghost drawing
+def draw_ghost(x, y, radius):
+    # Ghost body
+    pygame.draw.circle(screen, ghost_color, (int(x), int(y - radius // 2)), radius)
+    pygame.draw.rect(screen, ghost_color, (x - radius, y - radius // 2, radius * 2, radius))
+    # Ghost bottom (wavy effect)
+    wave_radius = radius // 4
+    for i in range(-2, 3):
+        pygame.draw.circle(screen, background_color, (int(x + i * wave_radius), int(y + radius)), wave_radius)
+    # Eyes
+    eye_radius = radius // 5
+    eye_offset_x = radius // 2
+    eye_offset_y = radius // 3
+    pygame.draw.circle(screen, (0, 0, 0), (int(x - eye_offset_x), int(y - eye_offset_y)), eye_radius)
+    pygame.draw.circle(screen, (0, 0, 0), (int(x + eye_offset_x), int(y - eye_offset_y)), eye_radius)
+
+# Check if a position is valid (not colliding with maze walls)
+def is_valid_position(x, y, radius, maze_layout):
+    pacman_rect = pygame.Rect(x - radius, y - radius, radius * 2, radius * 2)
+    for row_index, row in enumerate(maze_layout):
+        for col_index, cell in enumerate(row):
+            if cell == 1:
+                wall_rect = pygame.Rect(col_index * cell_width, row_index * cell_height, cell_width, cell_height)
+                if pacman_rect.colliderect(wall_rect):
+                    return False
+    return True
+
+# Move ghosts based on their speed and bounce off the walls
+def move_ghosts(maze_layout):
+    for ghost in ghosts:
+        ghost['x'] += ghost['speed_x']
+        ghost['y'] += ghost['speed_y']
+        if ghost['x'] <= 0 or ghost['x'] >= width:
+            ghost['speed_x'] *= -1
+        if ghost['y'] <= 0 or ghost['y'] >= height:
+            ghost['speed_y'] *= -1
+
+# Check if Pac-Man collides with any ghosts
+def check_collision(pacman_x, pacman_y, pacman_radius):
+    for ghost in ghosts:
+        distance = math.hypot(pacman_x - ghost['x'], pacman_y - ghost['y'])
+        if distance < pacman_radius + ghost_radius:
+            return True
+    return False
+
+# Display Game Over or You Win screen
+def display_game_over(message):
+    text = font.render(message, True, (255, 0, 0))
+    screen.blit(text, (width // 2 - text.get_width() // 2, height // 2 - 30))
+    restart_text = font.render("Press Q to Quit", True, (255, 255, 255))
+    screen.blit(restart_text, (width // 2 - restart_text.get_width() // 2, height // 2 + 30))
 
 # Game loop
 clock = pygame.time.Clock()
-game_over = False
-win = False  # Tracks if player won
-while True:
-    # Event handling
+
+while not game_over:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-
-    # Only proceed if game is not over
-    if not game_over:
-        # Movement controls
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
-            pacman_x -= pacman_speed
-        if keys[pygame.K_RIGHT]:
-            pacman_x += pacman_speed
-        if keys[pygame.K_UP]:
-            pacman_y -= pacman_speed
-        if keys[pygame.K_DOWN]:
-            pacman_y += pacman_speed
-
-        # Check wall collisions for Pac-Man
-        pacman_rect = pygame.Rect(pacman_x - pacman_radius, pacman_y - pacman_radius,
-                                  pacman_radius * 2, pacman_radius * 2)
-        for wall in walls:
-            if pacman_rect.colliderect(wall):
-                # Move Pac-Man back if he collides with a wall
-                if keys[pygame.K_LEFT]:
-                    pacman_x += pacman_speed
-                if keys[pygame.K_RIGHT]:
-                    pacman_x -= pacman_speed
-                if keys[pygame.K_UP]:
-                    pacman_y += pacman_speed
-                if keys[pygame.K_DOWN]:
-                    pacman_y -= pacman_speed
-
-        # Alternates the angle of Pac-Man's mouth for a chomping effect
-        mouth_angle = mouth_opening if (pygame.time.get_ticks() // 100) % 2 == 0 else 0
-
-        # Move ghosts
-        for ghost in ghosts:
-            ghost["x"] += ghost["speed_x"]
-            ghost["y"] += ghost["speed_y"]
-            # Reverse direction if a ghost hits a wall
-            if ghost["x"] - ghost_radius < 100 or ghost["x"] + ghost_radius > 700:
-                ghost["speed_x"] = -ghost["speed_x"]
-            if ghost["y"] - ghost_radius < 100 or ghost["y"] + ghost_radius > 500:
-                ghost["speed_y"] = -ghost["speed_y"]
-
-            # Check for collision with Pac-Man (Game Over Condition)
-            if math.hypot(pacman_x - ghost["x"], pacman_y - ghost["y"]) < pacman_radius + ghost_radius:
+            game_over = True
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_q:  # Press 'Q' to quit the game after Game Over
                 game_over = True
 
-        # Clear screen
-        screen.fill(background_color)
+    # Movement logic for Pac-Man
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT]:
+        if is_valid_position(pacman_x - pacman_speed, pacman_y, pacman_radius, level_maze_layouts[level]):
+            pacman_x -= pacman_speed
+    if keys[pygame.K_RIGHT]:
+        if is_valid_position(pacman_x + pacman_speed, pacman_y, pacman_radius, level_maze_layouts[level]):
+            pacman_x += pacman_speed
+    if keys[pygame.K_UP]:
+        if is_valid_position(pacman_x, pacman_y - pacman_speed, pacman_radius, level_maze_layouts[level]):
+            pacman_y -= pacman_speed
+    if keys[pygame.K_DOWN]:
+        if is_valid_position(pacman_x, pacman_y + pacman_speed, pacman_radius, level_maze_layouts[level]):
+            pacman_y += pacman_speed
 
-        # Draw walls with an opening in the top wall
-        for wall in walls:
-            pygame.draw.rect(screen, wall_color, wall)
+    # Animate Pac-Man's mouth opening and closing
+    mouth_angle += mouth_opening * mouth_direction
+    if mouth_angle >= 30 or mouth_angle <= 0:
+        mouth_direction *= -1  # Reverse direction
 
-        # Draw dots and remove them if Pac-Man "eats" them
-        new_dots = []
-        for dot_x, dot_y in dots:
-            if math.hypot(pacman_x - dot_x, pacman_y - dot_y) < pacman_radius:
-                score += 10  # Increase score
-                continue  # Pac-Man eats the dot if within range
-            pygame.draw.circle(screen, dot_color, (dot_x, dot_y), 5)
-            new_dots.append((dot_x, dot_y))
-        dots = new_dots
+    # Move ghosts
+    move_ghosts(level_maze_layouts[level])
 
-        # Draw Pac-Man
-        draw_pacman(pacman_x, pacman_y, pacman_radius, mouth_angle)
+    # Check for collision between Pac-Man and ghosts
+    if check_collision(pacman_x, pacman_y, pacman_radius):
+        game_over = True
 
-        # Draw ghosts
-        for ghost in ghosts:
-            pygame.draw.circle(screen, ghost_color, (int(ghost["x"]), int(ghost["y"])), ghost_radius)
+    # Clear the screen
+    screen.fill(background_color)
 
-        # Display score
-        score_text = font.render(f"Score: {score}", True, (255, 255, 255))
-        screen.blit(score_text, (10, 10))
+    # Draw maze and dots
+    draw_maze(level_maze_layouts[level])
+    for dot in dots[:]:
+        dot_x, dot_y = dot
+        if math.hypot(pacman_x - dot_x, pacman_y - dot_y) < pacman_radius + 5:  # Pac-Man eats the dot
+            dots.remove(dot)
+            score += 10
+        pygame.draw.circle(screen, dot_color, dot, 5)
 
-        # Check if all dots are eaten or if score reaches 100 (Winning Condition)
-        if not dots or score >= 100:
-            game_over = True
-            win = score >= 100
+    # Draw Pac-Man
+    draw_pacman(pacman_x, pacman_y, pacman_radius, mouth_angle)
 
-    else:
-        if win:
-            # Display "You Win!" message
-            game_over_text = font.render("You Win!", True, (0, 255, 0))
-            screen.blit(game_over_text, (width // 2 - 80, height // 2))
+    # Draw ghosts
+    for ghost in ghosts:
+        draw_ghost(ghost["x"], ghost["y"], ghost_radius)
 
-            # Create confetti particles if not yet created
-            if not confetti:
-                for _ in range(num_confetti):
-                    confetti.append({
-                        "x": random.randint(0, width),
-                        "y": random.randint(0, height),
-                        "color": (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255)),
-                        "speed_y": random.uniform(1, 4),  # Falling speed
-                        "size": random.randint(3, 7),  # Size of confetti
-                        "lifespan": random.randint(30, 60)  # Frames before it disappears
-                    })
+    # Draw score and level
+    score_text = font.render(f"Score: {score}", True, (255, 255, 255))
+    screen.blit(score_text, (10, 10))
+    level_text = font.render(f"Level: {level + 1}", True, (255, 255, 255))
+    screen.blit(level_text, (width - 120, 10))
 
-            # Draw and update confetti
-            for particle in confetti:
-                pygame.draw.circle(screen, particle["color"], (int(particle["x"]), int(particle["y"])), particle["size"])
-                particle["y"] += particle["speed_y"]
-                particle["lifespan"] -= 1
-
-            # Remove expired confetti
-            confetti = [p for p in confetti if p["lifespan"] > 0]
-
+    # Check if level is completed
+    if not dots:
+        level += 1
+        if level < len(level_maze_layouts):
+            pacman_x, pacman_y = 100, 100  # Reset Pac-Man position
+            ghosts = [{"x": random.randint(200, 600), "y": random.randint(100, 400), "speed_x": random.randint(-3, 3), "speed_y": random.randint(-3, 3)} for _ in range(level + 1)]  # Increase ghost count with level
+            dots = create_dots(level_maze_layouts[level])
         else:
-            # Display game over message
-            game_over_text = font.render("Game Over!", True, (255, 0, 0))
-            screen.blit(game_over_text, (width // 2 - 80, height // 2))
+            game_over = True
+            display_game_over("You Win!")
 
-        pygame.display.flip()
-        pygame.time.delay(2000)
+    if game_over:
+        display_game_over("Game Over" if not dots else "You Win!")
+        game_over_text = font.render("Game Over!", True, (255, 0, 0))
+        screen.blit(game_over_text, (width // 2 - 100, height // 2)) # Show game over for a longer time (10 seconds)
         pygame.quit()
         sys.exit()
 
-    # Update display
     pygame.display.flip()
-    clock.tick(30)  # Limit the frame rate
+    clock.tick(40)
+
+# Quit the game
+pygame.quit()
+sys.exit()
